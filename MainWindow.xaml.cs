@@ -81,9 +81,14 @@ namespace NoBorderWPF
                 {
                     NextButton_Click(sender, e);
                 }
+                else if (e.Key == Key.X)
+                {
+                    MessageTextBlock.Foreground = MessageTextBlock.Foreground == Brushes.Black ? Brushes.White : Brushes.Black;
+                }
                 else if (e.Key == Key.C)
                 {
                     this.Visibility = Visibility.Hidden;
+                    notifyIcon!.Visibility = Visibility.Visible;
                 }
                 else if (e.Key == Key.OemPlus)
                 {

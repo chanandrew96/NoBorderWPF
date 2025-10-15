@@ -3,7 +3,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:sys="clr-namespace:System.Windows;assembly=PresentationFramework" xmlns:tb1="http://www.hardcodet.net/taskbar"
-        Title="Taskbar Text Display" Width="auto" MinWidth="1200" SizeToContent="Height"
+        Title="Taskbar Text Display" Width="auto" MinWidth="1400" SizeToContent="Height"
         WindowStyle="None" Background="Black" Topmost="True" ShowInTaskbar="False"
         Loaded="Window_Loaded" Closing="Window_Closing" MouseLeftButtonDown="Window_MouseLeftButtonDown" KeyDown="Window_KeyDown" Icon="/book.png" LayoutUpdated="Window_LayoutUpdated" Unloaded="Window_Unloaded">
     <Grid Margin="5">
