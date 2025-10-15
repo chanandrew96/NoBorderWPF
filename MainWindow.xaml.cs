@@ -73,11 +73,11 @@ namespace NoBorderWPF
         {
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
-                if (e.Key == Key.Left)
+                if (e.Key == Key.Left || e.Key == Key.A)
                 {
                     PrevButton_Click(sender, e);
                 }
-                else if (e.Key == Key.Right)
+                else if (e.Key == Key.Right || e.Key == Key.S)
                 {
                     NextButton_Click(sender, e);
                 }
