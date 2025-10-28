@@ -1,0 +1,40 @@
+name: Build and Release WPF App
+
+on:
+  push:
+    tags:
+      - 'v*' # 當 push 標籤如 v1.0.0 時觸發
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write # 允許建立 Release
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build WPF App (Release, win-x64, Single File)
+        run: |
+          dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:PublishTrimmed=false -o ./publish
+
+      - name: Zip the executable
+        run: |
+          Compress-Archive -Path ./publish/* -DestinationPath ./WPFApp-${{ github.ref_name }}.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: WPFApp-${{ github.ref_name }}.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
