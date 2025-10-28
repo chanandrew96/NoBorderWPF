@@ -28,9 +28,14 @@ public partial class NotifyIconViewModel : ObservableObject
 
     // 儲存 TXT 檔案路徑及其索引
     private Dictionary<string, int> txtFiles = new Dictionary<string, int>();
+    //private readonly string configFilePath = Path.Combine(
+    //    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+    //    "NoBorderWPF",
+    //    "config.json");
     private readonly string configFilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "NoBorderWPF",
+        //Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        @"C:\Users\ChanCheH\.vscode\extensions\mathon.code-novel-0.0.6\books\",
+        //"NoBorderWPF",
         "config.json");
 
     public NotifyIconViewModel()

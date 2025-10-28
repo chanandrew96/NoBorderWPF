@@ -1,4 +1,7 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using H.NotifyIcon; // H.NotifyIcon.Wpf 2.3.1
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,8 +10,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using CommunityToolkit.Mvvm.ComponentModel;
-using H.NotifyIcon; // H.NotifyIcon.Wpf 2.3.1
 
 namespace NoBorderWPF
 {
@@ -19,18 +20,24 @@ namespace NoBorderWPF
     {
         private List<string> messages = new List<string>();
         private int currentMessageIndex = 0;
-        private string txtFilePath = @"C:\Users\ChanCheH\.vscode\extensions\mathon.code-novel-0.0.6\books\13_2.txt"; // TXT 檔案路徑
-        private string indexFilePath = @"C:\Users\ChanCheH\.vscode\extensions\mathon.code-novel-0.0.6\books\lastIndex.txt"; // 儲存上次索引的檔案路徑
+        //private string txtFilePath = @"C:\Users\ChanCheH\.vscode\extensions\mathon.code-novel-0.0.6\books\13_2.txt"; // TXT 檔案路徑
+        private string txtFilePath = @"C:\Users\ChanCheH\.vscode\extensions\mathon.code-novel-0.0.6\books\42460_tw\盜墓筆記.txt";
+        private string indexFilePath = @"C:\Users\ChanCheH\.vscode\extensions\mathon.code-novel-0.0.6\books\lastIndex_2.txt"; // 儲存上次索引的檔案路徑
         private double maxTextWidth; // 用於計算文字裁剪
         private TaskbarIcon? notifyIcon;
+        private Dictionary<string, int> txtFiles = new Dictionary<string, int>();
         private readonly string configFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "NoBorderWPF",
+            //Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            @"C:\Users\ChanCheH\.vscode\extensions\mathon.code-novel-0.0.6\books\",
+            //"NoBorderWPF",
             "config.json");
 
         public MainWindow()
         {
             InitializeComponent();
+            //MessageBox.Show(string.Format("configFilePath: {0}", configFilePath));
+            ResizeWindowWidth();
+            LoadTxtFiles();
             LoadMessages();
             LoadLastIndex();
             UpdateMessage();
@@ -53,9 +60,17 @@ namespace NoBorderWPF
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            ResizeWindowWidth();
+        }
+
+        private void ResizeWindowWidth()
+        {
             this.Left = 0;
             this.Top = SystemParameters.WorkArea.Height - this.ActualHeight;
-            this.Width = SystemParameters.WorkArea.Width;
+            //this.Width = SystemParameters.WorkArea.Width;
+            //this.Top = SystemParameters.PrimaryScreenHeight - this.ActualHeight;
+            this.Width = SystemParameters.PrimaryScreenWidth;
+            this.UpdateLayout();
             maxTextWidth = this.ActualWidth - PrevButton.Width - NextButton.Width - 10;
         }
 
@@ -73,11 +88,11 @@ namespace NoBorderWPF
         {
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
-                if (e.Key == Key.Left || e.Key == Key.A)
+                if (e.Key == Key.Left || e.Key == Key.Up || e.Key == Key.A)
                 {
                     PrevButton_Click(sender, e);
                 }
-                else if (e.Key == Key.Right || e.Key == Key.S)
+                else if (e.Key == Key.Right || e.Key == Key.Down || e.Key == Key.S)
                 {
                     NextButton_Click(sender, e);
                 }
@@ -92,12 +107,79 @@ namespace NoBorderWPF
                 }
                 else if (e.Key == Key.OemPlus)
                 {
-                    this.FontSize += 1;
+                    MessageTextBlock.FontSize += 1;
+                    this.FontSize = MessageTextBlock.FontSize;
+                    ResizeWindowWidth();
                 }
                 else if (e.Key == Key.OemMinus)
                 {
-                    this.FontSize -= 1;
+                    MessageTextBlock.FontSize -= 1;
+                    this.FontSize = MessageTextBlock.FontSize;
+                    ResizeWindowWidth();
                 }
+                else if (e.Key == Key.Q)
+                {
+                    var dialog = new OpenFileDialog
+                    {
+                        Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
+                        Title = "Select a TXT file",
+                        DefaultDirectory = @"C:\Users\ChanCheH\.vscode\extensions\mathon.code-novel-0.0.6\books"
+                    };
+                    if (dialog.ShowDialog() == true)
+                    {
+                        string filePath = dialog.FileName;
+                        if (!txtFiles.ContainsKey(filePath))
+                        {
+                            txtFiles.Add(filePath, 0); // 初始化索引為 0
+                            SaveTxtFiles();
+                            // 通知 MainWindow 更新訊息來源
+                            if (Application.Current.MainWindow is MainWindow mainWindow)
+                            {
+                                mainWindow.SwitchTxtSource(filePath);
+                            }
+                        }
+                    }
+                }
+                else if (e.Key == Key.E)
+                {
+                    //if (txtFiles.ContainsKey(filePath))
+                    //{
+                    //    if (Application.Current.MainWindow is MainWindow mainWindow)
+                    //    {
+                    //        mainWindow.SwitchTxtSource(filePath);
+                    //    }
+                    //}
+                }
+            }
+        }
+
+        private void LoadTxtFiles()
+        {
+            try
+            {
+                if (File.Exists(configFilePath))
+                {
+                    string json = File.ReadAllText(configFilePath);
+                    txtFiles = JsonSerializer.Deserialize<Dictionary<string, int>>(json) ?? new Dictionary<string, int>();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to load config: {ex.Message}");
+            }
+        }
+
+        private void SaveTxtFiles()
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(configFilePath)!);
+                string json = JsonSerializer.Serialize(txtFiles, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(configFilePath, json);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to save config: {ex.Message}");
             }
         }
 
@@ -118,26 +200,6 @@ namespace NoBorderWPF
         {
             if (messages.Any(m => !string.IsNullOrWhiteSpace(m)))
             {
-                string currentMessage = messages[currentMessageIndex];
-                if (!string.IsNullOrWhiteSpace(currentMessage))
-                {
-                    var formattedText = new FormattedText(
-                        currentMessage,
-                        System.Globalization.CultureInfo.CurrentCulture,
-                        FlowDirection.LeftToRight,
-                        new Typeface(MessageTextBlock.FontFamily, MessageTextBlock.FontStyle, MessageTextBlock.FontWeight, MessageTextBlock.FontStretch),
-                        MessageTextBlock.FontSize,
-                        Brushes.White,
-                        96.0);
-                    if (formattedText.Width > maxTextWidth)
-                    {
-                        int charCount = EstimateVisibleCharacters(currentMessage, maxTextWidth);
-                        string displayed = currentMessage.Substring(0, charCount);
-                        string remaining = currentMessage.Substring(charCount);
-                        messages.Insert(currentMessageIndex + 1, remaining);
-                        messages[currentMessageIndex] = displayed;
-                    }
-                }
                 do
                 {
                     currentMessageIndex = (currentMessageIndex + 1) % messages.Count;
@@ -186,6 +248,26 @@ namespace NoBorderWPF
                 if (this.Left == 0 && this.Top == SystemParameters.WorkArea.Height - this.ActualHeight)
                 {
                     this.Top = SystemParameters.WorkArea.Height - this.ActualHeight;
+                }
+                string currentMessage = messages[currentMessageIndex];
+                if (!string.IsNullOrWhiteSpace(currentMessage))
+                {
+                    var formattedText = new FormattedText(
+                        currentMessage,
+                        System.Globalization.CultureInfo.CurrentCulture,
+                        FlowDirection.LeftToRight,
+                        new Typeface(MessageTextBlock.FontFamily, MessageTextBlock.FontStyle, MessageTextBlock.FontWeight, MessageTextBlock.FontStretch),
+                        MessageTextBlock.FontSize,
+                        Brushes.White,
+                        96.0);
+                    if (formattedText.Width > maxTextWidth - 10)
+                    {
+                        int charCount = EstimateVisibleCharacters(currentMessage, maxTextWidth);
+                        string displayed = currentMessage.Substring(0, charCount);
+                        string remaining = currentMessage.Substring(charCount);
+                        messages.Insert(currentMessageIndex + 1, remaining);
+                        messages[currentMessageIndex] = displayed;
+                    }
                 }
             }
             else
@@ -259,7 +341,7 @@ namespace NoBorderWPF
         private void Window_Unloaded(object sender, RoutedEventArgs e)
         {
             SaveLastIndex();
-            notifyIcon?.Dispose();
+            //notifyIcon?.Dispose();
         }
     }
 }

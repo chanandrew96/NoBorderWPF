@@ -1,4 +1,5 @@
-﻿using System;
+﻿using H.NotifyIcon;
+using System;
 using System.IO;
 using System.IO.Pipes;
 using System.Threading;
@@ -17,11 +18,13 @@ namespace NoBorderWPF
         private Mutex? _mutex;
         private NamedPipeServerStream? _pipeServer;
         private bool _isFirstInstance;
+        private TaskbarIcon? notifyIcon;
 
         protected override void OnStartup(StartupEventArgs e)
         {
             // 創建 Mutex
             _mutex = new Mutex(true, MutexName, out _isFirstInstance);
+            notifyIcon = (TaskbarIcon)FindResource("NotifyIcon");
 
             if (_isFirstInstance)
             {
@@ -107,6 +110,11 @@ namespace NoBorderWPF
             _mutex?.ReleaseMutex();
             _mutex?.Dispose();
             base.OnExit(e);
+        }
+
+        private void App_SessionEnding(object sender, SessionEndingCancelEventArgs e)
+        {
+            notifyIcon?.Dispose();
         }
     }
 
